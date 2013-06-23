@@ -87,18 +87,18 @@ probmut_lut = {}
 fitness_lut = {}
 
 # Read data from specified files using JSON
-def readGeneGroup():
-    with open(args.genes) as f:
+def readGeneGroup(geneFile):
+    with open(geneFile) as f:
         return GeneGroups(json.load(f))
 
-def readFitness():
+def readFitness(fitnessFile):
     global fitness_lut
-    with open(args.fitness) as f:
+    with open(fitnessFile) as f:
         fitness_lut = json.load(f)
 
-def readProbmut():
+def readProbmut(probmutFile):
     global probmut_lut
-    with open(args.probmut) as f:
+    with open(probmutFile) as f:
         probmut_lut = {tuple(float(num) for num in k.strip('()').split(',')): v for k, v in json.load(f, object_pairs_hook=OrderedDict).iteritems()}
 
 def score_brood(brood):
@@ -186,9 +186,6 @@ def gg_son(gg):
             print event, "group:", group, "pos:", pos
             gg_son = getattr(gg,event)(group,pos)
     return gg_son
-
-def readDicts():
-    fitness_lut_file.strip()
     
 def gg_brood(gg,broodsize=1000):
     brood = OrderedDict([])
@@ -232,22 +229,6 @@ def run_generations(gg,broodsize, ngen, breedfrac):
         write_scored_brood(generation,next_brood)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Operon Evolution Simulation Tool")
-    parser.add_argument('fitness', type = str, help = "Name of file storing fitness scoring system")
-    parser.add_argument('probmut', type = str, help = "Name of file storing probability of mutations by type")
-    parser.add_argument('genes', type = str, help = "Name of file storing the initial gene group list. Example contents: [[4,2,6],[3,7],[8,2],[1]]")
-    parser.add_argument('-b', '--brood', dest = 'broodSize', type = int, help = "Size of brood")
-    parser.add_argument('-f', '--frac', dest = 'breedFrac', type = int, help = "The percentage of the brood that is breeding in a generation")
-    parser.add_argument('-g', '--gens', dest = 'numGens', type = int, help = "The number of generations to simulate")
-    args = parser.parse_args()
-    
-    # Populate global vars and initial gg object
-    readFitness()
-    readProbmut()
-    gg = readGeneGroup()
-    
-    # Run simulation
-    run_generations(gg, args.broodSize if args.broodSize else 1000, args.numGens if args.numGens else 100, args.breedfrac if args.breedFrac else 0.05)
+
    
           

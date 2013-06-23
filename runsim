@@ -1,10 +1,25 @@
 
 #!/usr/bin/env python
 
-from sys import argv
-import subprocess
+import argparse
+import opsim
 
-cmd = ["python", "./opsim.py"] + argv[1:]
-subprocess.call(cmd)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Operon Evolution Simulation Tool")
+    parser.add_argument('fitness', type = str, help = "Name of file storing fitness scoring system")
+    parser.add_argument('probmut', type = str, help = "Name of file storing probability of mutations by type")
+    parser.add_argument('genes', type = str, help = "Name of file storing the initial gene group list. Example contents: [[4,2,6],[3,7],[8,2],[1]]")
+    parser.add_argument('-b', '--brood', dest = 'broodSize', type = int, help = "Size of brood")
+    parser.add_argument('-f', '--frac', dest = 'breedFrac', type = int, help = "The percentage of the brood that is breeding in a generation")
+    parser.add_argument('-g', '--gens', dest = 'numGens', type = int, help = "The number of generations to simulate")
+    args = parser.parse_args()
+    
+    # Populate global vars and initial gg object
+    opsim.readFitness(args.fitness)
+    opsim.readProbmut(args.probmut)
+    gg = opsim.readGeneGroup(args.genes)
+    
+    # Run simulation
+    opsim.run_generations(gg, args.broodSize if args.broodSize else 1000, args.numGens if args.numGens else 100, args.breedfrac if args.breedFrac else 0.05)
 
 
