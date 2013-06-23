@@ -35,11 +35,10 @@ class GeneGroups(UserList):
             del retval[group]
         return GeneGroups(retval,'delete')
     def revstrand(self, group, pos):
-        """ Move gene to reverse strand, within group"""
+        """ Move gene to reverse strand, migrate from group"""
         retval = copy.deepcopy(self.data)
-        retval[group][pos] = -retval[group][pos]
-        # TODO: Need migrate the gene from the group
-        # Doesn't make sense to leave it in the group
+        revgene = retval[group].pop(pos) if len(retval[group]) > 1 else retval.pop(group)[0]
+        retval += [[-revgene]]
         return GeneGroups(retval,'revstrand')
     def migrate(self, group, pos):
         """Split a group in two"""
