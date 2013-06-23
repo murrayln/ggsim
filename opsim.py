@@ -3,7 +3,9 @@ import random
 from UserList import UserList
 from collections import OrderedDict
 import copy
-import scipy 
+import argparse
+import json
+import scipy
 """
 'group': index of gene group
 'pos': index of gene group
@@ -81,25 +83,24 @@ class GeneGroups(UserList):
     def __len__(self):
         return len(self.data)
 
+# Initialize global vars
+probmut_lut = {}
+fitness_lut = {}
 
-probmut_lut = OrderedDict([
-                ((0,0.005), 'duplicate'),
-                ((0.005,0.010), 'delete'),
-                ((0.010,0.020), 'revstrand'),
-                ((0.020,0.030), 'migrate'),
-                ((0.030,0.080), 'swap'),
-                ((0.080,0.090), 'join')
-                ])
+# Read data from specified files using JSON
+def readGeneGroup():
+    with open(args.genes) as f:
+        return GeneGroups(json.load(f))
 
-# Fitness function.... not sure. Price Equation?
-# For now, I'll try something more like the Weasel program
-fitness_lut = {'join': 3,
-               'duplicate': 2,
-               'delete': -1,
-               'revstrand': -2,
-               'migrate': -1,
-               'swap': 0,
-               'null': 0}
+def readFitness():
+    global fitness_lut
+    with open(args.fitness) as f:
+        fitness_lut = json.load(f)
+
+def readProbmut():
+    global probmut_lut
+    with open(args.probmut) as f:
+        probmut_lut = {tuple(float(num) for num in k.strip('()').split(',')): v for k, v in json.load(f, object_pairs_hook=OrderedDict).iteritems()}
 
 def score_brood(brood):
     """ Weighted choice 
@@ -186,7 +187,10 @@ def gg_son(gg):
             print event, "group:", group, "pos:", pos
             gg_son = getattr(gg,event)(group,pos)
     return gg_son
-        
+
+def readDicts():
+    fitness_lut_file.strip()
+    
 def gg_brood(gg,broodsize=1000):
     brood = OrderedDict([])
     for i in range(broodsize):
@@ -195,7 +199,7 @@ def gg_brood(gg,broodsize=1000):
         #print i,brood[i]
     return brood
 
-def multi_gg_brood(in_brood, generation=0, broodsize=1000,breedfrac=0.05):
+def multi_gg_brood(in_brood, broodsize, breedfrac, generation=0):
     next_brood = OrderedDict([])
     culled_broods = []
     breedsize = int(breedfrac * broodsize)
@@ -215,7 +219,8 @@ def multi_gg_brood(in_brood, generation=0, broodsize=1000,breedfrac=0.05):
     return OrderedDict(next_brood.items()[:broodsize])
     
 
-def run_generations(gg,broodsize=1000,ngen=100,breedfrac=0.05):
+def run_generations(gg,broodsize, ngen, breedfrac):
+    print(broodsize, ngen, breedfrac)
     breedsize = int(breedfrac * broodsize)
     brood = gg_brood(gg,broodsize)
     next_brood = score_brood(brood) 
@@ -224,7 +229,26 @@ def run_generations(gg,broodsize=1000,ngen=100,breedfrac=0.05):
         print "*********************"
         print "generation", generation
         print "*********************"
-        next_brood = multi_gg_brood(next_brood, generation)
+        next_brood = multi_gg_brood(next_brood, broodsize, breedfrac, generation)
         write_scored_brood(generation,next_brood)
-        
-        
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Operon Evolution Simulation Tool")
+    parser.add_argument('fitness', type = str, help = "Name of file storing fitness scoring system")
+    parser.add_argument('probmut', type = str, help = "Name of file storing probability of mutations by type")
+    parser.add_argument('genes', type = str, help = "Name of file storing the initial gene group list. Example contents: [[4,2,6],[3,7],[8,2],[1]]")
+    parser.add_argument('-b', '--brood', dest = 'broodSize', type = int, help = "Size of brood")
+    parser.add_argument('-f', '--frac', dest = 'breedFrac', type = int, help = "The percentage of the brood that is breeding in a generation")
+    parser.add_argument('-g', '--gens', dest = 'numGens', type = int, help = "The number of generations to simulate")
+    args = parser.parse_args()
+    
+    # Populate global vars and initial gg object
+    readFitness()
+    readProbmut()
+    gg = readGeneGroup()
+    
+    # Run simulation
+    run_generations(gg, args.broodSize if args.broodSize else 1000, args.numGens if args.numGens else 100, args.breedfrac if args.breedFrac else 0.05)
+   
+          
